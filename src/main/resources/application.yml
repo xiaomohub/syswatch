@@ -10,3 +10,7 @@ spring:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
+
+
+prometheus:
+  url: http://192.168.49.1:9099

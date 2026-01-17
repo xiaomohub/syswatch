@@ -1,25 +1,26 @@
 package org.xiaomo.syswatch.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.xiaomo.syswatch.config.PrometheusProperties;
+
 import java.util.*;
 
 @Service
 public class PrometheusService {
 
     private final RestTemplate restTemplate;
+    private final PrometheusProperties properties;
 
-    @Value("${prometheus.url:http://localhost:9090}")
-    private String prometheusUrl;
-
-    public PrometheusService(RestTemplate restTemplate) {
+    public PrometheusService(RestTemplate restTemplate, PrometheusProperties properties) {
         this.restTemplate = restTemplate;
+        this.properties = properties;
     }
 
-    /**
-     * 查询所有资源状态（示例：CPU 和内存）
-     */
+    private String getBaseUrl() {
+        return properties.getUrl();
+    }
+
     public List<Map<String, Object>> getAllResourceStatus() {
         String queryCpu = "avg(rate(node_cpu_seconds_total{mode!=\"idle\"}[5m])) * 100";
         String queryMem = "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100";
@@ -37,9 +38,6 @@ public class PrometheusService {
         return list;
     }
 
-    /**
-     * 查询单个资源详情
-     */
     public Map<String, Object> getResourceDetails(String instance) {
         String cpuQuery = String.format(
                 "avg(rate(node_cpu_seconds_total{instance=\"%s\",mode!=\"idle\"}[5m])) * 100",
@@ -47,7 +45,7 @@ public class PrometheusService {
         );
         String memQuery = String.format(
                 "(1 - (node_memory_MemAvailable_bytes{instance=\"%s\"} / node_memory_MemTotal_bytes{instance=\"%s\"})) * 100",
-                instance,instance
+                instance, instance
         );
 
         Map<String, Object> cpu = queryPrometheus(cpuQuery);
@@ -61,9 +59,6 @@ public class PrometheusService {
         );
     }
 
-    /**
-     * 查询历史数据（区间查询）
-     */
     public List<Map<String, Object>> getResourceHistory(String instance, long start, long end, long step) {
         String cpuRangeQuery = String.format(
                 "avg(rate(node_cpu_seconds_total{instance=\"%s\",mode!=\"idle\"}[5m])) * 100",
@@ -72,7 +67,7 @@ public class PrometheusService {
 
         String url = String.format(
                 "%s/api/v1/query_range?query=%s&start=%d&end=%d&step=%d",
-                prometheusUrl, cpuRangeQuery, start, end, step
+                getBaseUrl(), cpuRangeQuery, start, end, step
         );
 
         Map<String, Object> response = restTemplate.getForObject(url, Map.class);
@@ -95,17 +90,11 @@ public class PrometheusService {
         return history;
     }
 
-    /**
-     * 通用查询
-     */
     private Map<String, Object> queryPrometheus(String query) {
-        String url = String.format("%s/api/v1/query?query=%s", prometheusUrl, query);
+        String url = String.format("%s/api/v1/query?query=%s", getBaseUrl(), query);
         return restTemplate.getForObject(url, Map.class);
     }
 
-    /**
-     * 提取 Prometheus 单值指标
-     */
     private Double extractValue(Map<String, Object> result) {
         try {
             List<?> results = (List<?>) ((Map<?, ?>) result.get("data")).get("result");
