@@ -1,22 +1,19 @@
 package org.xiaomo.syswatch.domain.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "user")
+@TableName("user") // 对应数据库表名
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
     private String password;
 
     /**
@@ -24,11 +21,6 @@ public class User {
      */
     private String role;
 
-    @Column(name = "create_time", updatable = false)
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
-
-    @PrePersist
-    public void prePersist() {
-        createTime = LocalDateTime.now();
-    }
 }

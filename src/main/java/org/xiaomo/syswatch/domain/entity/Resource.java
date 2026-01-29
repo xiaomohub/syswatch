@@ -1,16 +1,15 @@
 package org.xiaomo.syswatch.domain.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "resource")
+@TableName("resource") // 对应数据库表名
 public class Resource {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     private String name;
@@ -21,25 +20,14 @@ public class Resource {
 
     private Integer port;
 
-    @Column(name = "extra_config", columnDefinition = "json")
-    private String extraConfig;
+    @TableField("extra_config")
+    private String extraConfig; // JSON 字段，直接 String 存储即可
 
     private Integer status;
 
-    @Column(name = "create_time", updatable = false)
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
-    @Column(name = "update_time")
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
-    @PrePersist
-    public void prePersist() {
-        createTime = LocalDateTime.now();
-        updateTime = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        updateTime = LocalDateTime.now();
-    }
 }

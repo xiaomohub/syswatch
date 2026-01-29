@@ -1,25 +1,24 @@
 package org.xiaomo.syswatch.domain.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "alert")
+@TableName("alert") // 对应数据库表名
 public class Alert {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @Column(name = "resource_id")
+    @TableField("resource_id")
     private Long resourceId;
 
-    @Column(name = "metric_type")
+    @TableField("metric_type")
     private String metricType;
 
-    @Column(name = "metric_value")
+    @TableField("metric_value")
     private Double metricValue;
 
     private Integer level;
@@ -28,20 +27,9 @@ public class Alert {
 
     private String message;
 
-    @Column(name = "alert_time")
+    @TableField(value = "alert_time", fill = FieldFill.INSERT)
     private LocalDateTime alertTime;
 
-    @Column(name = "update_time")
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
-    @PrePersist
-    public void prePersist() {
-        alertTime = LocalDateTime.now();
-        updateTime = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        updateTime = LocalDateTime.now();
-    }
 }

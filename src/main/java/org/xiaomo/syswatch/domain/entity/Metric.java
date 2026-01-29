@@ -1,38 +1,32 @@
 package org.xiaomo.syswatch.domain.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "metric")
+@TableName("metric") // 对应数据库表名
 public class Metric {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @Column(name = "resource_id")
+    @TableField("resource_id")
     private Long resourceId;
 
-    @Column(name = "cpu_usage")
+    @TableField("cpu_usage")
     private Double cpuUsage;
 
-    @Column(name = "mem_usage")
+    @TableField("mem_usage")
     private Double memUsage;
 
-    @Column(name = "disk_usage")
+    @TableField("disk_usage")
     private Double diskUsage;
 
-    @Column(name = "response_time")
+    @TableField("response_time")
     private Integer responseTime;
 
-    @Column(name = "collect_time")
+    @TableField(value = "collect_time", fill = FieldFill.INSERT)
     private LocalDateTime collectTime;
-
-    @PrePersist
-    public void prePersist() {
-        collectTime = LocalDateTime.now();
-    }
 }
