@@ -8,12 +8,15 @@ spring:
     username: root
     password: root123
     driver-class-name: com.mysql.cj.jdbc.Driver
-
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: public
 
   sql:
     init:
       mode: never
 
 prometheus:
-  url: http://192.168.49.1:9099
-
+  reload-url: http://prometheus:9099/-/reload
