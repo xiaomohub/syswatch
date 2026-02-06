@@ -1,22 +1,37 @@
 server:
   port: 8080
 
-
 spring:
-  datasource:
-    url: jdbc:mysql://localhost:3308/syswatch?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    username: root
-    password: root123
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  application:
+    name: syswatch
+
+  config:
+    import: optional:nacos:syswatch.yaml
+
   cloud:
     nacos:
+      server-addr: localhost:8849
       config:
-        server-addr: 127.0.0.1:8848
-        namespace: public
+        file-extension: yaml
+        import-check:
+          enabled: false
 
   sql:
     init:
       mode: never
 
-prometheus:
-  reload-url: http://prometheus:9099/-/reload
+syswatch:
+  ssh:
+    host: localhost   # WSL IP
+    port: 22
+    username: root
+    password: prom123
+
+  prometheus:
+    rule-dir: /root/docker-services/prometheus/rules/
+
+
+alert:
+  feishu:
+    webhook: https://open.feishu.cn/open-apis/bot/v2/hook/3cc88e9e-410e-4b50-a9f1-6d9240f99f5d
+

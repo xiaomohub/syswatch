@@ -6,18 +6,21 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.xiaomo.syswatch.service.NacosConfigService;
+
 import java.util.Properties;
 
 @Service
 public class NacosConfigServiceImpl implements NacosConfigService {
 
-    @Value("${nacos.server-addr}")
+    // ✅ 改这里
+    @Value("${spring.cloud.nacos.server-addr}")
     private String serverAddr;
 
-    @Value("${nacos.namespace}")
+    // 如果你没有 namespace 可以给默认值
+    @Value("${spring.cloud.nacos.config.namespace:}")
     private String namespace;
 
-    @Value("${nacos.group}")
+    @Value("${spring.cloud.nacos.config.group:DEFAULT_GROUP}")
     private String defaultGroup;
 
     private ConfigService configService;
@@ -26,7 +29,11 @@ public class NacosConfigServiceImpl implements NacosConfigService {
     public void init() throws Exception {
         Properties props = new Properties();
         props.put("serverAddr", serverAddr);
-        props.put("namespace", namespace);
+
+        if (namespace != null && !namespace.isEmpty()) {
+            props.put("namespace", namespace);
+        }
+
         this.configService = NacosFactory.createConfigService(props);
     }
 
@@ -45,4 +52,13 @@ public class NacosConfigServiceImpl implements NacosConfigService {
             throw new RuntimeException("Publish config to nacos error", e);
         }
     }
+
+    public String get(String dataId) {
+        try {
+            return configService.getConfig(dataId, "DEFAULT_GROUP", 3000);
+        } catch (Exception e) {
+            throw new RuntimeException("获取 Nacos 配置失败", e);
+        }
+    }
+
 }
