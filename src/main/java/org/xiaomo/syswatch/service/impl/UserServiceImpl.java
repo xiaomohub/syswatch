@@ -2,6 +2,7 @@ package org.xiaomo.syswatch.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.springframework.stereotype.Service;
+import org.xiaomo.syswatch.annotation.AlertLog;
 import org.xiaomo.syswatch.domain.entity.User;
 import org.xiaomo.syswatch.mapper.UserMapper;
 import org.xiaomo.syswatch.security.JwtUtil;
@@ -19,6 +20,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @AlertLog(action="登录")
     public String login(String username, String password) {
         User user = userMapper.selectOne(
                 new QueryWrapper<User>().eq("username", username)

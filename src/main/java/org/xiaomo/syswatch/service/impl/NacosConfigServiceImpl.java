@@ -5,6 +5,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.xiaomo.syswatch.annotation.AlertLog;
 import org.xiaomo.syswatch.service.NacosConfigService;
 
 import java.util.Properties;
@@ -38,6 +39,7 @@ public class NacosConfigServiceImpl implements NacosConfigService {
     }
 
     @Override
+    @AlertLog(action="nacos进行存储内容")
     public void publish(String dataId, String content) {
         try {
             boolean success = configService.publishConfig(

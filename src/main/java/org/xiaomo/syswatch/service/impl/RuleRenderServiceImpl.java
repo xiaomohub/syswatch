@@ -1,6 +1,7 @@
 package org.xiaomo.syswatch.service.impl;
 
 import org.springframework.stereotype.Service;
+import org.xiaomo.syswatch.annotation.AlertLog;
 import org.xiaomo.syswatch.domain.entity.AlertRule;
 import org.xiaomo.syswatch.service.RuleRenderService;
 
@@ -11,6 +12,7 @@ import java.util.Map;
 public class RuleRenderServiceImpl implements RuleRenderService {
 
     @Override
+    @AlertLog(action="渲染文件内容")
     public String render(String resourceType, List<AlertRule> rules) {
         StringBuilder sb = new StringBuilder();
         sb.append("groups:\n");

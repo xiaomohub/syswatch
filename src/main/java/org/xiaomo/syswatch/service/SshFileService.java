@@ -9,4 +9,6 @@ public interface SshFileService {
      * @param content  YAML 内容
      */
     void writeRuleFile(String fileName, String content);
+
+    String getRemoteSha256(String fileName);
 }

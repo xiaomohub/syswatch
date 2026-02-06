@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.xiaomo.syswatch.annotation.AlertLog;
 import org.xiaomo.syswatch.config.FeishuProperties;
 import org.xiaomo.syswatch.domain.dto.AlertDTO;
 import org.xiaomo.syswatch.domain.dto.AlertmanagerWebhookDTO;
@@ -32,6 +33,7 @@ public class AlertEventServiceImpl implements AlertEventService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
+    @AlertLog(action="告警转发及保存")
     public void handle(AlertmanagerWebhookDTO payload) {
         if (payload == null || payload.getAlerts() == null) {
             return;
