@@ -8,8 +8,11 @@ import org.xiaomo.syswatch.mapper.AlertRuleMapper;
 import org.xiaomo.syswatch.service.*;
 import static org.xiaomo.syswatch.util.HashUtil.sha256;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,45 +36,67 @@ public class RulePublishServiceImpl implements RulePublishService {
     @Override
     public void publishAll() {
 
-        // 1. 查询启用规则
         List<AlertRule> rules = alertRuleMapper.selectEnabled();
 
-        // 2. 按资源类型分组
         Map<String, List<AlertRule>> groupMap =
                 rules.stream().collect(Collectors.groupingBy(AlertRule::getResourceType));
 
-        // 3. 渲染 + 发布
         for (Map.Entry<String, List<AlertRule>> entry : groupMap.entrySet()) {
 
             String resourceType = entry.getKey();
             String fileName = resourceType + "_rules.yaml";
 
-            // 3.1 渲染规则
+            // 1. 渲染
             String renderedYaml = ruleRenderService.render(resourceType, entry.getValue());
 
-            // 3.2 发布到 Nacos（快照）
+            // 2. 发布到 Nacos
             nacosConfigService.publish(fileName, renderedYaml);
 
-            // 3.3 从 Nacos 读取（唯一真源）
+            // 3. 从 Nacos 读取（唯一真源）
             String nacosContent = nacosConfigService.get(fileName);
 
-            // 3.4 本地 hash（对 nacosContent）
-            String localHash = sha256(nacosContent);
+            // 4. 生成发布标识
+            String publishId = generatePublishId();
 
-            // 3.5 SSH 写入 Prometheus 主机
-            sshFileService.writeRuleFile(fileName, nacosContent);
+            // 5. 加入标识
+            String finalContent = addPublishId(nacosContent, publishId);
 
-            // 3.6 远端 hash 校验
-            String remoteHash = sshFileService.getRemoteSha256(fileName);
-            if (!localHash.equals(remoteHash)) {
+            // 6. SSH 写入 + 确认
+            boolean success = false;
+            int retry = 0;
+            int maxRetry = 3;
+
+            while (!success && retry < maxRetry) {
+                sshFileService.writeRuleFile(fileName, finalContent);
+
+                String remoteContent = sshFileService.readRuleFile(fileName);
+                if (remoteContent != null && remoteContent.contains(publishId)) {
+                    success = true;
+                } else {
+                    retry++;
+                }
+            }
+
+            if (!success) {
                 throw new IllegalStateException(
-                        "规则文件内容不一致，拒绝 reload：" + fileName
+                        "规则文件同步失败，无法确认写入成功：" + fileName
                 );
             }
         }
 
-        // 4. 所有规则文件校验通过，才 reload
+        // 7. 全部确认成功后 reload
         prometheusService.reload();
+    }
+
+    private String generatePublishId() {
+        return LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+                + "-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+
+    private String addPublishId(String content, String publishId) {
+        return "# PUBLISH_ID: " + publishId + "\n" + content;
     }
 
 }

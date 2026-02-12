@@ -9,8 +9,9 @@ import org.xiaomo.syswatch.annotation.AlertLog;
 import org.xiaomo.syswatch.config.PrometheusProperties;
 import org.xiaomo.syswatch.service.SshFileService;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 @Service
@@ -23,7 +24,7 @@ public class SshFileServiceImpl implements SshFileService {
     private org.xiaomo.syswatch.config.SshProperties sshProperties;
 
     @Override
-    @AlertLog(action="ssh远程写入文件")
+    @AlertLog(action = "ssh远程写入规则文件")
     public void writeRuleFile(String fileName, String content) {
         JSch jsch = new JSch();
         Session session = null;
@@ -46,7 +47,6 @@ public class SshFileServiceImpl implements SshFileService {
             channel.setCommand(command);
             channel.connect();
 
-            // 等待执行完成
             while (!channel.isClosed()) {
                 Thread.sleep(50);
             }
@@ -59,16 +59,18 @@ public class SshFileServiceImpl implements SshFileService {
         }
     }
 
-    // 对内容做简单转义，避免特殊字符破坏 bash 命令
-    private String escapeForBash(String content) {
-        return "'" + content.replace("'", "'\"'\"'") + "'";
+    @Override
+    @AlertLog(action = "ssh远程读取规则文件")
+    public String readRuleFile(String fileName) {
+        String remoteFile = prometheusProperties.getRuleDir() + fileName;
+        String command = "cat " + remoteFile;
+        return sshExecute(command);
     }
 
-
-    @Override
-    @AlertLog(action="ssh校验哈希是否相同")
-    public String getRemoteSha256(String fileName) {
-
+    /**
+     * 统一的 SSH 执行方法（读文件 / 校验 / 其他命令都能复用）
+     */
+    private String sshExecute(String command) {
         JSch jsch = new JSch();
         Session session = null;
         ChannelExec channel = null;
@@ -83,9 +85,6 @@ public class SshFileServiceImpl implements SshFileService {
             session.setConfig("StrictHostKeyChecking", "no");
             session.connect(5000);
 
-            String remoteFile = prometheusProperties.getRuleDir() + fileName;
-            String command = "sha256sum " + remoteFile + " | awk '{print $1}'";
-
             channel = (ChannelExec) session.openChannel("exec");
             channel.setCommand(command);
             channel.setInputStream(null);
@@ -93,20 +92,33 @@ public class SshFileServiceImpl implements SshFileService {
             InputStream in = channel.getInputStream();
             channel.connect();
 
-            String result = new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
-
-            if (result.isEmpty()) {
-                throw new IllegalStateException("远程 hash 为空：" + remoteFile);
+            StringBuilder result = new StringBuilder();
+            try (BufferedReader reader =
+                         new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    result.append(line).append("\n");
+                }
             }
 
-            return result;
+            while (!channel.isClosed()) {
+                Thread.sleep(50);
+            }
+
+            return result.toString();
 
         } catch (Exception e) {
-            throw new RuntimeException("获取远程规则文件 hash 失败: " + fileName, e);
+            throw new RuntimeException("SSH 执行失败: " + command, e);
         } finally {
             if (channel != null) channel.disconnect();
             if (session != null) session.disconnect();
         }
     }
 
+    /**
+     * bash 安全转义
+     */
+    private String escapeForBash(String content) {
+        return "'" + content.replace("'", "'\"'\"'") + "'";
+    }
 }

@@ -10,5 +10,6 @@ public interface SshFileService {
      */
     void writeRuleFile(String fileName, String content);
 
-    String getRemoteSha256(String fileName);
+
+    String readRuleFile(String fileName);
 }
