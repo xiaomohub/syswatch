@@ -33,14 +33,14 @@ public class AlertRuleServiceImpl implements AlertRuleService {
     public void create(AlertRule rule) {
         rule.setEnabled(1);
         alertRuleMapper.insert(rule);
-        rulePublishService.publishAll();
+        rulePublishService.publishByResourceType(rule.getResourceType());
     }
 
     @Override
     @Transactional
     public void update(AlertRule rule) {
         alertRuleMapper.updateById(rule);
-        rulePublishService.publishAll();
+        rulePublishService.publishByResourceType(rule.getResourceType());
     }
 
     @Override
@@ -57,7 +57,7 @@ public class AlertRuleServiceImpl implements AlertRuleService {
         rule.setId(id);
         rule.setEnabled(enabled);
         alertRuleMapper.updateById(rule);
-        rulePublishService.publishAll();
+        rulePublishService.publishByResourceType(rule.getResourceType());
     }
 
     @Override

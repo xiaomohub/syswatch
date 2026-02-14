@@ -4,58 +4,88 @@ import org.springframework.stereotype.Service;
 import org.xiaomo.syswatch.annotation.AlertLog;
 import org.xiaomo.syswatch.domain.entity.AlertRule;
 import org.xiaomo.syswatch.service.RuleRenderService;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class RuleRenderServiceImpl implements RuleRenderService {
 
     @Override
-    @AlertLog(action="渲染文件内容")
+    @AlertLog(action = "渲染文件内容")
     public String render(String resourceType, List<AlertRule> rules) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("groups:\n");
-        sb.append("- name: ").append(resourceType).append("_rules\n");
-        sb.append("  rules:\n");
+
+        // ====== 构造 YAML 数据结构 ======
+
+        Map<String, Object> root = new LinkedHashMap<>();
+
+        List<Map<String, Object>> groups = new ArrayList<>();
+        Map<String, Object> group = new LinkedHashMap<>();
+        group.put("name", resourceType + "_rules");
+
+        List<Map<String, Object>> ruleList = new ArrayList<>();
 
         for (AlertRule r : rules) {
-            sb.append("  - alert: ").append(r.getRuleName()).append("\n");
 
-            // 拼接 expr，如果有 comparator 和 threshold，可以组装
+            Map<String, Object> rule = new LinkedHashMap<>();
+
+            // alert 名称
+            rule.put("alert", r.getRuleName());
+
+            // expr
             String expr = r.getExprTemplate();
             if (r.getComparator() != null && r.getThreshold() != null) {
                 expr = expr + " " + r.getComparator() + " " + r.getThreshold();
             }
-            sb.append("    expr: ").append(expr).append("\n");
+            rule.put("expr", expr);
 
-            sb.append("    for: ").append(r.getDuration() != null ? r.getDuration() : "0m").append("\n");
+            // for
+            rule.put("for", r.getDuration() != null ? r.getDuration() : "0m");
 
             // labels
-            sb.append("    labels:\n");
+            Map<String, Object> labels = new LinkedHashMap<>();
             if (r.getSeverity() != null) {
-                sb.append("      severity: ").append(r.getSeverity()).append("\n");
+                labels.put("severity", r.getSeverity());
             }
+            rule.put("labels", labels);
 
             // annotations
-            sb.append("    annotations:\n");
-            if (r.getSummary() != null) {
-                sb.append("      summary: \"").append(r.getSummary()).append("\"\n");
-            } else {
-                sb.append("      summary: \"").append(r.getRuleName()).append("\"\n");
-            }
+            Map<String, Object> annotations = new LinkedHashMap<>();
+
+            annotations.put(
+                    "summary",
+                    r.getSummary() != null ? r.getSummary() : r.getRuleName()
+            );
+
             if (r.getDescription() != null) {
-                sb.append("      description: \"").append(r.getDescription()).append("\"\n");
+                annotations.put("description", r.getDescription());
             }
 
-            // 自定义 annotations map
-            Map<String, Object> customAnno = r.getAnnotations();
-            if (customAnno != null) {
-                for (Map.Entry<String, Object> entry : customAnno.entrySet()) {
-                    sb.append("      ").append(entry.getKey()).append(": \"").append(entry.getValue()).append("\"\n");
-                }
+            // 自定义 annotations
+            if (r.getAnnotations() != null) {
+                annotations.putAll(r.getAnnotations());
             }
+
+            rule.put("annotations", annotations);
+
+            ruleList.add(rule);
         }
-        return sb.toString();
+
+        group.put("rules", ruleList);
+        groups.add(group);
+        root.put("groups", groups);
+
+        // ====== YAML 输出配置 ======
+
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setPrettyFlow(true);
+        options.setIndent(2);
+
+
+        Yaml yaml = new Yaml(options);
+
+        return yaml.dump(root);
     }
 }

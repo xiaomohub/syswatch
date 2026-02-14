@@ -4,7 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.xiaomo.syswatch.domain.entity.AlertLog;
 
 public interface AlertLogService {
-    void record(String module, String alertId, String action, String operator, boolean status, String message);
+
+    void record(AlertLog log);
 
     Page<AlertLog> listLogs(int pageNum, int pageSize);
 }
