@@ -29,8 +29,8 @@ public class AlertReceiverController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String alertName,
             @RequestParam(required = false) String severity,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime
+            @RequestParam(required = false) LocalDateTime startTime,
+            @RequestParam(required = false) LocalDateTime endTime
     ) {
         return alertEventService.queryAlertEvents(pageNum, pageSize, alertName, severity, startTime, endTime);
     }

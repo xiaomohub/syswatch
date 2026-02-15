@@ -48,15 +48,33 @@ public class RuleRenderServiceImpl implements RuleRenderService {
             if (r.getSeverity() != null) {
                 labels.put("severity", r.getSeverity());
             }
+
+            labels.put("instance", "{{ $labels.instance }}");
             rule.put("labels", labels);
+
 
             // annotations
             Map<String, Object> annotations = new LinkedHashMap<>();
 
+            String thresholdStr = r.getThreshold() != null ? r.getThreshold().toString() : "";
+
             annotations.put(
                     "summary",
-                    r.getSummary() != null ? r.getSummary() : r.getRuleName()
+                    "当前值 {{ printf \"%.2f\" $value }}%"
             );
+
+            annotations.put(
+                    "description",
+                    "当前值 {{ printf \"%.2f\" $value }}%，阈值 " + thresholdStr + "%"
+            );
+
+            // 如果数据库里有自定义注解，覆盖默认值
+            if (r.getAnnotations() != null) {
+                annotations.putAll(r.getAnnotations());
+            }
+
+            rule.put("annotations", annotations);
+
 
             if (r.getDescription() != null) {
                 annotations.put("description", r.getDescription());
