@@ -35,3 +35,14 @@ prometheus:
 alert:
   feishu:
     webhook: https://open.feishu.cn/open-apis/bot/v2/hook/3cc88e9e-410e-4b50-a9f1-6d9240f99f5d
+
+# Alertmanager配置
+alertmanager:
+  # Alertmanager API地址
+  url: http://localhost:9094
+  # API版本路径
+  api-path: /api/v2
+  # 连接超时（毫秒）
+  connect-timeout: 5000
+  # 读取超时（毫秒）
+  read-timeout: 10000
