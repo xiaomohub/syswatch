@@ -5,10 +5,14 @@ spring:
   application:
     name: syswatch
 
+  websocket:
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
   datasource:
-    url: jdbc:mysql://localhost:3308/syswatch?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    username: root
-    password: root123
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   sql:
@@ -21,28 +25,21 @@ logging:
 
 syswatch:
   ssh:
-    host: localhost
-    port: 22
-    username: root
-    password: prom123
-
-  prometheus:
-    rule-dir: /root/docker-services/prometheus/rules/
+    host: ${SSH_HOST}
+    port: ${SSH_PORT}
+    username: ${SSH_USERNAME}
+    password: ${SSH_PASSWORD}
 
 prometheus:
-  reload-url: http://localhost:9099/-/reload
+  reload-url: ${PROM_RELOAD_URL}
+  rule-dir: ${PROM_RULE_DIR}
 
 alert:
   feishu:
-    webhook: https://open.feishu.cn/open-apis/bot/v2/hook/3cc88e9e-410e-4b50-a9f1-6d9240f99f5d
+    webhook: ${FEISHU_WEBHOOK}
 
-# Alertmanager配置
 alertmanager:
-  # Alertmanager API地址
-  url: http://localhost:9094
-  # API版本路径
-  api-path: /api/v2
-  # 连接超时（毫秒）
-  connect-timeout: 5000
-  # 读取超时（毫秒）
-  read-timeout: 10000
+  url: ${ALERTMANAGER_URL}
+  api-path: ${ALERTMANAGER_API_PATH}
+  connect-timeout: ${ALERTMANAGER_CONNECT_TIMEOUT}
+  read-timeout: ${ALERTMANAGER_READ_TIMEOUT}

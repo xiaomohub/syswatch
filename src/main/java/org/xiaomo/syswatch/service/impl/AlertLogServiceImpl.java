@@ -14,7 +14,8 @@ import java.time.LocalDateTime;
 
 @Service
 public class AlertLogServiceImpl implements AlertLogService {
-
+    @Resource
+    private AlertLogWebSocketHandler webSocketHandler;
     @Resource
     private AlertLogMapper logMapper;
 
@@ -31,7 +32,6 @@ public class AlertLogServiceImpl implements AlertLogService {
         }
         logMapper.insert(log);
 
-        // WebSocket 推送（推送时排除大文本，前端列表不需要）
         try {
             String beforeBak = log.getContentBefore();
             String afterBak = log.getContentAfter();
@@ -39,9 +39,10 @@ public class AlertLogServiceImpl implements AlertLogService {
             log.setContentAfter(null);
 
             String json = objectMapper.writeValueAsString(log);
-            AlertLogWebSocketHandler.broadcast(json);
 
-            // 还原（不影响后续逻辑）
+            // ✅ 改成实例调用
+            webSocketHandler.broadcast(json);
+
             log.setContentBefore(beforeBak);
             log.setContentAfter(afterBak);
         } catch (Exception e) {

@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  syswatch:
+    build: .
+    container_name: syswatch
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    restart: always

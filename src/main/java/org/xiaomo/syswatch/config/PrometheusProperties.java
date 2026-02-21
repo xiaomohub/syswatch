@@ -1,5 +1,6 @@
 package org.xiaomo.syswatch.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -9,9 +10,23 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "prometheus")
 public class PrometheusProperties {
 
-    /** Prometheus HTTP 接口，用于 reload 或查询 */
+    /**
+     * Prometheus HTTP API 地址
+     */
     private String url;
 
-    /** Prometheus 规则目录（SSH 写入用） */
-    private String ruleDir = "/root/docker-services/prometheus/rules/";
+    /**
+     * Prometheus 规则目录
+     */
+    private String ruleDir;
+
+    @PostConstruct
+    public void validate() {
+        if (url == null || url.isBlank()) {
+            throw new IllegalStateException("prometheus.url must be configured");
+        }
+        if (ruleDir == null || ruleDir.isBlank()) {
+            throw new IllegalStateException("prometheus.rule-dir must be configured");
+        }
+    }
 }
